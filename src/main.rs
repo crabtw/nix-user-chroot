@@ -103,16 +103,18 @@ impl<'a> RunChroot<'a> {
 
     fn bind_mount_direntry(&self, entry: &fs::DirEntry) {
         let path = entry.path();
-        let stat = entry
-            .metadata()
-            .unwrap_or_else(|err| panic!("cannot get stat of {}: {}", path.display(), err));
 
-        if stat.is_dir() {
-            self.bind_mount_directory(entry);
-        } else if stat.is_file() {
-            self.bind_mount_file(entry);
-        } else if stat.file_type().is_symlink() {
-            self.mirror_symlink(entry);
+        match entry.metadata() {
+            Ok(stat) =>
+                if stat.is_dir() {
+                    self.bind_mount_directory(entry);
+                } else if stat.is_file() {
+                    self.bind_mount_file(entry);
+                } else if stat.file_type().is_symlink() {
+                    self.mirror_symlink(entry);
+                }
+            Err(err) =>
+                eprintln!("cannot get stat of {}: {}", path.display(), err),
         }
     }
 
